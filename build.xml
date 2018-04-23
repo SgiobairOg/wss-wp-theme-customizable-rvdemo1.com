@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="CWS WordPress Theme" default="build" basedir=".">
+
+    <!-- Set some basic project information and targets -->
+    <property name="bin.dir" value="${project.basedir}/vendor/bin" override="true" />
+    <property name="reports.dir" value="${project.basedir}/reports" override="true" />
+    <property name="theme.slug" value="" override="true" />
+
+    <!-- For running the complete project build -->
+    <target name="build" depends="clean, prepare, check-defaults, check-hooks, phplint" description="Runs the complete project build"/>
+
+    <!-- Clean up from previous builds -->
+    <target name="clean" hidden="true">
+        <delete dir="${reports.dir}" />
+    </target>
+
+    <!-- Prepare for the new build -->
+    <target name="prepare" depends="clean" hidden="true">
+        <mkdir dir="${reports.dir}" />
+    </target>
+
+    <!-- Check for default values -->
+    <target name="check-defaults">
+        <echo msg="Checking for default values from the template project..." />
+        <exec command="grep -ir 'CWS WordPress Theme Template' style.css" returnProperty="found.default-theme-name" />
+        <if>
+            <equals arg1="${found.default-theme-name}" arg2="1" />
+            <else>
+                <fail msg="Please change the theme name in the style.css file so that it is site-specific." />
+            </else>
+        </if>
+        <exec command="grep -ir 'tol-cws/wp-theme-template' composer.json" returnProperty="found.default-composer-name" />
+        <if>
+            <equals arg1="${found.default-composer-name}" arg2="1" />
+            <else>
+                <fail msg="Please change the value of the name field in the composer.json file so that it is specific to the theme." />
+            </else>
+        </if>
+        <echo msg="Default values not found!"/>
+    </target>
+
+    <!-- Check for required hooks -->
+    <target name="check-hooks">
+        <echo msg="Checking for required content action..." />
+        <exec command="grep -r 'cws_content' index.php page*.php" returnProperty="found.required-content-action" />
+        <if>
+            <equals arg1="${found.required-content-action}" arg2="0" />
+            <else>
+                <fail msg="Please add a call to the cws_content action to your theme's template files." />
+            </else>
+        </if>
+        <echo msg="Found a call to the content action!"/>
+        <echo msg="Checking for wp_head()..." />
+        <exec command="grep 'wp_head()' header.php" returnProperty="found.required-header-hook" />
+        <if>
+            <equals arg1="${found.required-header-hook}" arg2="0" />
+            <else>
+                <fail msg="Please add a call to the wp_head() function in your header.php file." />
+            </else>
+        </if>
+        <echo msg="Found wp_head()!"/>
+        <echo msg="Checking for wp_footer()..." />
+        <exec command="grep 'wp_footer()' footer.php" returnProperty="found.required-footer-hook" />
+        <if>
+            <equals arg1="${found.required-footer-hook}" arg2="0" />
+            <else>
+                <fail msg="Please add a call to the wp_footer() function in your footer.php file." />
+            </else>
+        </if>
+        <echo msg="Found wp_footer()!"/>
+    </target>
+
+    <!-- PHP Lint -->
+    <target name="phplint">
+        <echo msg="Linting files..." />
+        <phplint haltonfailure="true" tofile="${reports.dir}/phplint.log" deprecatedAsError="true">
+            <fileset dir="${project.basedir}">
+                <include name="*.php"/>
+            </fileset>
+        </phplint>
+        <echo msg="No errors found!"/>
+    </target>
+
+    <!-- Package the theme for installation -->
+    <target name="package">
+        <exec executable="zip">
+            <arg value="-r" />
+            <arg value="${theme.slug}.zip" />
+            <arg value="." />
+            <arg value="--exclude=\.idea\*" />
+            <arg value="--exclude= *\.iml" />
+            <arg value="--exclude=\.git\*" />
+            <arg value="--exclude=reports\*" />
+            <arg value="--exclude=tests\*" />
+            <arg value="--exclude=less\*" />
+            <arg value="--exclude=*\.md" />
+            <arg value="--exclude=build.xml" />
+        </exec>
+    </target>
+
+</project>
